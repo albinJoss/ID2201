@@ -1,11 +1,12 @@
 -module(gsm2).
 -compile(export_all).
 -define(arghh, 100).
--define(timeout, 100).
+-define(timeout, 10000).
 
 %Leader
 start(Id) ->
     Rnd = random:uniform(1000),
+    io:format("~w~n", [Rnd]),
     Self = self(),
     {ok, spawn_link(fun() -> init(Id, Rnd, Self) end)}.
 
@@ -32,7 +33,9 @@ leader(Id, Master, Slaves, Group) ->
 %Slave
 start(Id, Grp) ->
     Self = self(),
-    {ok, spawn_link(fun() -> init(Id, Grp, Self) end)}.
+    Rnd = random:uniform(1000),
+    io:format("Slave started~n"),
+    {ok, spawn_link(fun() -> init(Id, Rnd, Grp, Self) end)}.
 
 init(Id, Rnd, Grp, Master) ->
     random:seed(Rnd, Rnd, Rnd),
