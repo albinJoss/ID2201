@@ -1,6 +1,7 @@
 -module(gsm2).
 -compile(export_all).
 -define(arghh, 100).
+-define(timeout, 100).
 
 %Leader
 start(Id) ->
@@ -33,7 +34,8 @@ start(Id, Grp) ->
     Self = self(),
     {ok, spawn_link(fun() -> init(Id, Grp, Self) end)}.
 
-init(Id, Grp, Master) ->
+init(Id, Rnd, Grp, Master) ->
+    random:seed(Rnd, Rnd, Rnd),
     Self = self(),
     Grp ! {join, Master, Self},
     receive
@@ -41,6 +43,8 @@ init(Id, Grp, Master) ->
             erlang:monitor(process, Leader),
             Master ! {view, Group},
             slave(Id, Master, Leader, Slaves, Group)
+    after ?timeout ->
+        Master ! {error, "no reply from leader"}
     end.
 
 
@@ -78,4 +82,13 @@ election(Id, Master, Slaves, [_|Group]) ->
     end.
 
 bcast(Id, Msg, Nodes) ->
-    li
+    lists:foreach(fun(Node) -> Node ! Msg, crash(Id) end, Nodes).
+
+crash(Id) ->
+    case random:uniform(?arghh) of
+        ?arghh ->
+            io:format("leader ~w: crash ~n", [Id]),
+            exit(no_luck);
+        _ ->
+            ok
+    end.
